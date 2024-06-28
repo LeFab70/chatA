@@ -1,39 +1,118 @@
-<main>
-  <div class="container">
-    <h3 class="mb-3">Supa Chat <button class="btn btn-secondary" style="float: right;">Log
-        out</button>
-    </h3>
-    <div class="card">
-      <div>
-
-        <div class="col-12 col-lg-12 col-xl-12">
-          <div class="position-relative">
-            <div class="chat-messages p-4">
-              <div class="chat-message-left pb-4">
-                <div class="me-5">
-                  <img
-                    src="https://res.cloudinary.com/dz4tt9omp/image/upload/v1687699216/photo_5960666862087946083_w.jpg"
-                    class="rounded-circle mr-1" alt="Sharon Doe" width="40" height="40">
-                  <div class="text-muted small text-nowrap mt-2">5:54 am</div>
-                </div>
-                <div class="flex-shrink-1 bg-light rounded py-2 px-3 ml-3">
-                  <div class="font-weight-bold mb-1">Sharon Doe</div>
-                  Lorem ipsum dolor sit amet consectetur adipisicing elit. Aliquid at ullam reiciendis consequatur quis
-                  similique ea sapiente, voluptatem voluptate quia magnam a non corrupti unde accusantium maiores?
-                  Explicabo, maiores inventore!
-
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="flex-grow-0 py-3 px-4 border-top">
-            <div class="input-group">
-              <input type="text" class="form-control" placeholder="Type your message">
-              <button class="btn btn-primary">Send</button>
-            </div>
-          </div>
+<div
+  class="min-h-screen flex flex-col items-center justify-start py-6 bg-gray-100"
+>
+  <div class="bg-white p-8 rounded-lg shadow-lg max-w-4xl container px-6">
+    <div class="flex items-center justify-between mb-4">
+      <div class="flex items-center">
+        <img
+          [src]="user?.avatar_url || 'https://via.placeholder.com/150'"
+          alt="{{ getFirstWord(user?.full_name) }}"
+          class="w-10 h-10 rounded-full mr-4"
+        />
+        <div class="text-lg font-bold uppercase">
+          {{ getFirstWord(user?.full_name) }}
         </div>
       </div>
+      <button
+        (click)="logout()"
+        class="text-red-500 hover:text-red-600 flex space-x-2 text-2xl items-center justify-center"
+      >
+        <span>Logout</span>
+        <mat-icon>logouticon</mat-icon>
+      </button>
     </div>
+    <div class="my-10 text-center flex space-x-1 items-center justify-center">
+      <hr />
+      <h2 class="text-4xl font-black mb-2 uppercase text-indigo-900">
+        <span class="text-4xl"><mat-icon>home</mat-icon></span
+        >Chat
+      </h2>
+      <hr />
+    </div>
+    <div class="space-y-6">
+      <div class="flex flex-col">
+        @for (message of this.chats(); track message) {
+        <div class="flex justify-between items-center space-y-20 mb-4">
+          <div class="text-blue-950/50">
+            <img
+              src="{{ message?.users?.avatar_url }}"
+              alt="{{ message?.users?.full_name }}"
+              class="w-10 h-10 rounded-full mr-4"
+            />
+            <div class="flex flex-col">
+              <span> {{ getFirstWord(message?.users?.full_name) }}</span>
+              <span>
+                <span class="text-4xl"><mat-icon>event_repeat</mat-icon></span>
+                {{ message?.created_at | date : "M/d/yy,h:mm a" }}</span
+              >
+              <span> {{ timeSince(message.created_at) }}</span>
+            </div>
+          </div>
+          <div class="text-black font-bold">
+            <span>{{ message?.text }}</span>
+          </div>
+          <div class="flex">
+            <button
+              (click)="startEditing(message)"
+              class="text-blue-500 hover:text-blue-600 cursor-pointer"
+            >
+              <span class="text-4xl"><mat-icon>edit</mat-icon></span>
+            </button>
+            <button
+              (click)="openModal(message)"
+              class="text-red-500 hover:text-red-600 cursor-pointer"
+            >
+              <span class="text-4xl"><mat-icon>delete</mat-icon></span>
+            </button>
+            <app-delete-modal
+              *ngIf="isModalOpen"
+              (close)="closeModal()"
+            ></app-delete-modal>
+          </div>
+        </div>
+        } @empty {
+        <div>
+          <h1>No chats to display</h1>
+        </div>
+        }
+      </div>
+    </div>
+    <div *ngIf="editingMessage" class="mb-4">
+      <input
+        [(ngModel)]="editingMessage.text"
+        class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+      />
+      <button
+        (click)="saveEditing()"
+        class="mt-2 w-full bg-indigo-500 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500"
+      >
+        Save
+      </button>
+      <button
+        (click)="cancelEditing()"
+        class="mt-2 w-full bg-gray-500 text-white py-2 px-4 rounded-md shadow hover:bg-gray-600 focus:outline-none focus:ring-2 focus:ring-gray-500"
+      >
+        Cancel
+      </button>
+    </div>
+    <form [formGroup]="chatForm" (ngSubmit)="sendMessage()">
+      <div class="mt-4">
+        <input
+          formControlName="chatMessage"
+          type="text"
+          [(ngModel)]="newMessage"
+          placeholder="Type your message"
+          class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        />
+        <button
+          type="submit"
+          [disabled]="!chatForm.valid"
+          class="flex items-center space-x-2 justify-center disabled:cur mt-2 w-full bg-indigo-500 text-white py-2 px-4 rounded-md shadow hover:bg-indigo-600 focus:outline-none focus:ring-2 focus:ring-indigo-500 disabled:bg-indigo-300"
+        >
+          <span><mat-icon>schedule_send</mat-icon></span>
+          <span>Send</span>
+        </button>
+      </div>
+    </form>
   </div>
-</main>
+</div>
